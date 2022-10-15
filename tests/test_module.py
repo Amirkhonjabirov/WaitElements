@@ -1,57 +1,82 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import pytest
+from page_object.ProdPage import *
+from page_object.CatalogPage import *
+from page_object.AuthPage import *
+from page_object.AdminPage import *
+from page_object.MainPage import *
 
 
 def test_main(executer):
-    w = WebDriverWait(executer, 3)
     executer.get(url=executer.base_url)
-    w.until(EC.title_is("Your Store"))
-    w.until(EC.presence_of_element_located((By.ID, "search")))
-    w.until(EC.presence_of_element_located((By.ID, "cart")))
-    w.until(EC.presence_of_element_located((By.ID, "category")))
-    w.until(EC.presence_of_element_located((By.ID, "carousel0")))
+    MainConst(executer).title(MAIN_TITLE)
+    MainConst(executer).pres_element(M_SEARCH)
+    MainConst(executer).pres_element(CART)
+    MainConst(executer).pres_element(CATS)
+    MainConst(executer).pres_element(ADS)
 
 
 def test_admin(executer):
     executer.get(url=f"{executer.base_url}admin")
-    w = WebDriverWait(executer, 5)
-    w.until(EC.title_is("Administration"))
-    w.until(EC.text_to_be_present_in_element((By.CLASS_NAME, "panel-title"), "Please enter your login details."))
-    w.until(EC.presence_of_element_located((By.ID, "input-username")))
-    w.until(EC.presence_of_element_located((By.ID, "input-password")))
-    w.until(EC.text_to_be_present_in_element((By.CSS_SELECTOR, "button[type='submit']"), "Login"))
+    MainConst(executer).title(ADMIN_TITLE)
+    MainConst(executer).text_presnc(PANEL_TITLE, "Please enter your login details.")
+    MainConst(executer).pres_element(ADMIN_USER)
+    MainConst(executer).pres_element(ADMIN_PASS)
+    MainConst(executer).text_presnc(SUBMIT_LOG, "Login")
 
 
 def test_auth(executer):
     executer.get(url=f"{executer.base_url}/index.php?route=account/register")
-    w = WebDriverWait(executer, 5)
-    w.until(EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            "input[type='text'][name='firstname']")))
-    w.until(EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            "input[type='text'][name='lastname']")))
-    w.until(EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            "input[type='password'][name='password']")))
-
-    w.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div[class='list-group']")))
-    w.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='Submit']")))
+    MainConst(executer).pres_element(FIRSTNAME)
+    MainConst(executer).pres_element(LASTNAME)
+    MainConst(executer).pres_element(PASSWORD)
+    MainConst(executer).visible_element(LIST)
+    MainConst(executer).elem_clickble(SUBMIT)
 
 
 def test_catalog(executer):
     executer.get(url=f"{executer.base_url}laptop-notebook")
-    w = WebDriverWait(executer, 5)
-    w.until(EC.title_is("Laptops & Notebooks"))
-    w.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "select[id='input-sort']")))
-    w.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "select[id='input-limit']")))
-    w.until(EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            "input[type='text'][name='search']")))
+    MainConst(executer).title(CAT_TITLE)
+    MainConst(executer).visible_element(SORT)
+    MainConst(executer).visible_element(LIMIT)
+    MainConst(executer).pres_element(SEARCH)
 
 
 def test_product(executer):
     executer.get(url=f"{executer.base_url}tablet/samsung-galaxy-tab-10-1")
-    w = WebDriverWait(executer, 5)
-    w.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[id='button-cart']")))
-    w.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-original-title='Add to Wish List']")))
-    w.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-original-title='Compare this Product']")))
-    w.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "input[type='text'][id='input-quantity']")))
-    w.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div[class='rating']")))
+    MainConst(executer).elem_clickble(CART_BUTTON)
+    MainConst(executer).elem_clickble(COMPARE)
+    MainConst(executer).elem_clickble(ADD_TO_WISH)
+    MainConst(executer).visible_element(QUANTITY)
+    MainConst(executer).visible_element(RATING)
+
+
+def test_add_prod(executer):
+    executer.get(url=f"{executer.base_url}admin")
+    AdminPage(executer) \
+        .logon(username="user", password="bitnami") \
+        .open_products()
+    AdminPage(executer).add_product("iPHONE 12")
+    assert AdminPage(executer).pres_element(SUCCESS)
+
+
+def test_del_prod(executer):
+    executer.get(url=f"{executer.base_url}admin")
+    AdminPage(executer) \
+        .logon(username="user", password="bitnami") \
+        .open_products()
+    AdminPage(executer).del_product("iPHONE 12")
+    assert AdminPage(executer).pres_element(SUCCESS)
+
+
+def test_auth_user(executer):
+    executer.get(url=f"{executer.base_url}/index.php?route=account/register")
+    AuthPage(executer).auth_user("amir", "djab", "amirhon@mail.ru", "901000796", "123456")
+    assert AuthPage(executer).text_presnc(RESULT, "Your Account Has Been Created!")
+
+
+@pytest.mark.parametrize('tex, cur', (('0.00€', EUR), ('$0.00', USD), ('£0.00', GBP)))
+def test_change_currency(executer, tex, cur):
+    executer.get(url=executer.base_url)
+    MainConst(executer).click(MainConst(executer).elem_clickble(CURRENCY))
+    MainConst(executer).click(MainConst(executer).visible_element(cur))
+    assert MainConst(executer).text_presnc(CART_SUM, f"0 item(s) - {tex}")
