@@ -1,5 +1,6 @@
 from selenium.webdriver.common.by import By
 from page_object.MainConst import MainConst
+import allure
 
 ADMIN_TITLE = "Administration"
 PANEL_TITLE = (By.CLASS_NAME, "panel-title")
@@ -25,27 +26,77 @@ DELETE = (By.CSS_SELECTOR, "button[data-original-title='Delete']")
 
 class AdminPage(MainConst):
     def logon(self, username, password):
-        self._input(self.pres_element(ADMIN_USER), username)
-        self._input(self.pres_element(ADMIN_PASS), password)
-        self.click(self.elem_clickble(SUBMIT_LOG))
-        return self
+        with allure.step("Enter Username"):
+            try:
+                self._input(self.pres_element(ADMIN_USER), username)
+            except NoSuchElementException as e:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+                raise AssertionError(e.msg)
+
+        with allure.step("Enter Password"):
+            try:
+                self._input(self.pres_element(ADMIN_PASS), password)
+            except NoSuchElementException as r:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+                raise AssertionError(r.msg)
+
+        with allure.step("Submit"):
+            self.click(self.elem_clickble(SUBMIT_LOG))
+            return self
 
     def open_products(self):
-        self.click(self.visible_element(CATALOGS))
-        self.click(self.pres_element(PRODUCTS))
+        with allure.step("Open Catalog Page"):
+            try:
+                self.click(self.visible_element(CATALOGS))
+            except NoSuchElementException as f:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+                raise AssertionError(f.msg)
+
+        with allure.step("Open Products Page"):
+            try:
+                self.click(self.pres_element(PRODUCTS))
+            except NoSuchElementException as x:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+                raise AssertionError(x.msg)
 
     def add_product(self, product: str):
-        self.click(self.pres_element(ADD))
-        self._input(self.pres_element(PROD_NAME), product)
-        self._input(self.pres_element(META), product)
-        self.click(self.pres_element(DATA))
-        self._input(self.pres_element(MODEL), product)
-        self.click(self.pres_element((By.CSS_SELECTOR, "button[data-original-title='Save']")))
+        with allure.step("Click to Add Button"):
+            try:
+                self.click(self.pres_element(ADD))
+            except NoSuchElementException as e:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+            raise AssertionError(e.msg)
+
+        with allure.step("Add Product Name and Meta"):
+            try:
+                self._input(self.pres_element(PROD_NAME), product)
+                self._input(self.pres_element(META), product)
+            except NoSuchElementException as x:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+            raise AssertionError(x.msg)
+
+        with allure.step("Add Data and Model"):
+            try:
+                self.click(self.pres_element(DATA))
+                self._input(self.pres_element(MODEL), product)
+            except NoSuchElementException as q:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+            raise AssertionError(q.msg)
+
+        with allure.step("Save"):
+            try:
+                self.click(self.pres_element((By.CSS_SELECTOR, "button[data-original-title='Save']")))
+            except NoSuchElementException as y:
+                allure.attach(body=self.driver.get_screenshot_as_png())
+            raise AssertionError(y.msg)
 
     def del_product(self, product: str):
-        self._input(self.pres_element(FILTER), product)
-        self.click(self.pres_element(BUTTON_FILTER))
-        assert self.text_presnc(PROS, product)
-        self.click(self.pres_element(CHECKBOX))
-        self.click(self.pres_element(DELETE))
-        self.alert().accept()
+        with allure.step("Find Product"):
+            self._input(self.pres_element(FILTER), product)
+            self.click(self.pres_element(BUTTON_FILTER))
+            assert self.text_presnc(PROS, product)
+        with allure.step("Choose"):
+            self.click(self.pres_element(CHECKBOX))
+        with allure.step("Delete"):
+            self.click(self.pres_element(DELETE))
+            self.alert().accept()
