@@ -2,46 +2,65 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
+import logging
 
 
 class MainConst:
     def __init__(self, driver):
         self.driver = driver
 
+        self.logger = logging.getLogger(type(self).__name__)
+        file_handler = logging.FileHandler(f"logs/{self.driver.test_name}.log")
+        file_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(file_handler)
+        self.logger.setLevel(level=self.driver.log_level)
+
     def visible_element(self, locator: tuple):
         try:
+            self.logger.info("Checking visible of element: {}".format(locator))
             return WebDriverWait(self.driver, 5).until(EC.visibility_of_element_located(locator))
         except TimeoutException:
             raise AssertionError(f"Не дождался видимости элемента {locator}")
+            self.logger.error("Element NotVisible: {}".format(locator))
 
     def pres_element(self, locator: tuple):
         try:
+            self.logger.info("Checking presence of element: {}".format(locator))
             return WebDriverWait(self.driver, 5).until(EC.presence_of_element_located(locator))
         except TimeoutException:
+            self.logger.error("Element NotPresent: {}".format(locator))
             raise AssertionError(f"элемент {locator} не найден")
 
     def elem_clickble(self, locator: tuple):
         try:
+            self.logger.info("Checking clickability of element: {}".format(locator))
             return WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(locator))
         except TimeoutException:
+            self.logger.error("Element NotClickable: {}".format(locator))
             raise AssertionError(f"элемент {locator} не кликабелен")
 
     def title(self, locator):
         try:
+            self.logger.info("Checking title: {}".format(locator))
             return WebDriverWait(self.driver, 5).until(EC.title_is(locator))
         except TimeoutException:
+            self.logger.error("Not Corect title: {}".format(locator))
             raise AssertionError(f"текст {locator} не корректен")
 
     def text_presnc(self, locator: tuple, txt):
         try:
+            self.logger.info("Checking presence of text: {}".format(locator))
             return WebDriverWait(self.driver, 5).until(EC.text_to_be_present_in_element(locator, txt))
         except TimeoutException:
+            self.logger.error("Text NotPresent: {}".format(locator))
             raise AssertionError(f"текст {txt} отсутствует")
 
     def click(self, element):
+        self.logger.info("Clicking element: {}".format(element))
         ActionChains(self.driver).move_to_element(element).pause(0.1).click().perform()
 
     def _input(self, element, value):
+        self.logger.info("Input {} in input {}".format(value, element))
         self.click(element)
         element.clear()
         element.send_keys(value)
